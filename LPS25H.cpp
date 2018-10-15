@@ -76,18 +76,6 @@ double LPS25H::getTemperature()
 	return 42.5 + (temperature / 480.0);
 }
 
-void LPS25H::powerUp()
-{
-	int32_t data = 0;
-
-	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
-
-	data &= ~(0b1 << 7);
-	data |= LPS25H_POWER_UP;
-
-	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
-}
-
 void LPS25H::powerDown()
 {
 	int32_t data = 0;
@@ -96,6 +84,18 @@ void LPS25H::powerDown()
 
 	data &= ~(0b1 << 7);
 	data |= LPS25H_POWER_DOWN;
+
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
+}
+
+void LPS25H::powerUp()
+{
+	int32_t data = 0;
+
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
+
+	data &= ~(0b1 << 7);
+	data |= LPS25H_POWER_UP;
 
 	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
 }
@@ -142,7 +142,7 @@ void LPS25H::triggerMeasurement()
 
 	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
 
-	if ((data & 0b01110000) == LPS25H_DATARATE_ONE_SHOT) {
+	if ((data & (0b111 << 4)) == LPS25H_DATARATE_ONE_SHOT) {
 		i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG2, 0b1);
 	}
 }

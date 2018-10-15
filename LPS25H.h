@@ -82,11 +82,12 @@ public:
 		LPS25H_POWER_UP							= (0b1 << 7),
 	} LPS25HPowerMode_t;
 
-	void powerUp();
-	void powerDown();
-
 	double getPressure();
 	double getTemperature();
+
+	void powerDown();
+	void powerUp();
+
 	void triggerMeasurement();
 
 	void setAveragePressureSamples(LPS25HAveragePressureSamples_t averagePressureSamples);
