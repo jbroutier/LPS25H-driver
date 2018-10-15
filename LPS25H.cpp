@@ -13,14 +13,20 @@ LPS25H::LPS25H(const char* devicePath, uint8_t deviceAddress)
 
 	int32_t data = 0;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_WHO_AM_I_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_WHO_AM_I);
 
-	if (!(data & LPS25H_WHO_AM_I_RESPONSE)) {
+	if (data != 0xBD) {
 		throw std::runtime_error("Failed to verify the device identity.");
 	}
 
-	i2c_smbus_write_byte_data(device, LPS25H_CTRL_REG1, 0x00);
-	i2c_smbus_write_byte_data(device, LPS25H_CTRL_REG1, LPS25H_ODR_SET + LPS25H_BDU_SET);
+	data = 0x00000000;
+
+	data |= LPS25H_BDU_ENABLE;
+	data |= LPS25H_DATARATE_1_HZ;
+	data |= LPS25H_AVERAGE_PRESSURE_8_SAMPLES;
+	data |= LPS25H_AVERAGE_TEMPERATURE_8_SAMPLES;
+
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
 }
 
 double LPS25H::getPressure()
@@ -28,19 +34,19 @@ double LPS25H::getPressure()
 	int32_t data = 0;
 	int32_t pressure = 0;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_STATUS_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_STATUS_REG);
 
-	if (!(data & LPS25H_PRESSURE_READY)) {
+	if (!(data & 0b10)) {
 		throw std::runtime_error("The pressure sensor is not ready.");
 	}
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_PRESSURE_XL_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_PRESS_OUT_XL);
 	pressure = data;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_PRESSURE_L_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_PRESS_OUT_L);
 	pressure |= data << 8;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_PRESSURE_H_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_PRESS_OUT_H);
 	pressure |= data << 16;
 
 	return pressure / 4096.0;
@@ -51,16 +57,16 @@ double LPS25H::getTemperature()
 	int32_t data = 0;
 	int32_t temperature = 0;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_STATUS_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_STATUS_REG);
 
-	if (!(data & LPS25H_TEMPERATURE_READY)) {
+	if (!(data &0b01)) {
 		throw std::runtime_error("The temperature sensor is not ready.");
 	}
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_TEMP_L_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_TEMP_OUT_L);
 	temperature = data;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_TEMP_H_REG);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_TEMP_OUT_H);
 	temperature |= data << 8;
 
 	if (temperature > 32768) {
@@ -70,26 +76,75 @@ double LPS25H::getTemperature()
 	return 42.5 + (temperature / 480.0);
 }
 
-void LPS25H::initialize()
+void LPS25H::powerUp()
 {
 	int32_t data = 0;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_CTRL_REG1);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
 
+	data &= ~(0b1 << 7);
 	data |= LPS25H_POWER_UP;
 
-	i2c_smbus_write_byte_data(device, LPS25H_CTRL_REG1, (uint8_t)data);
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
 }
 
-void LPS25H::shutdown()
+void LPS25H::powerDown()
 {
 	int32_t data = 0;
 
-	data = i2c_smbus_read_byte_data(device, LPS25H_CTRL_REG1);
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
 
-	data &= ~LPS25H_POWER_UP;
+	data &= ~(0b1 << 7);
+	data |= LPS25H_POWER_DOWN;
 
-	i2c_smbus_write_byte_data(device, LPS25H_CTRL_REG1, (uint8_t)data);
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
+}
+
+void LPS25H::setAveragePressureSamples(LPS25HAveragePressureSamples_t averagePressureSamples)
+{
+	int32_t data = 0;
+
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
+
+	data &= ~0b11;
+	data |= averagePressureSamples;
+
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
+}
+
+void LPS25H::setAverageTemperatureSamples(LPS25HAverageTemperatureSamples_t averageTemperatureSamples)
+{
+	int32_t data = 0;
+
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
+
+	data &= ~(0b11 << 2);
+	data |= averageTemperatureSamples;
+
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
+}
+
+void LPS25H::setDataRate(LPS25HDataRate_t dataRate)
+{
+	int32_t data = 0;
+
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
+
+	data &= ~(0b111 << 4);
+	data |= dataRate;
+
+	i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG1, (uint8_t)data);
+}
+
+void LPS25H::triggerMeasurement()
+{
+	int32_t data = 0;
+
+	data = i2c_smbus_read_byte_data(device, LPS25H_REGISTER_CTRL_REG1);
+
+	if ((data & 0b01110000) == LPS25H_DATARATE_ONE_SHOT) {
+		i2c_smbus_write_byte_data(device, LPS25H_REGISTER_CTRL_REG2, 0b1);
+	}
 }
 
 LPS25H::~LPS25H()
