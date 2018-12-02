@@ -19,7 +19,7 @@ LPS25H::LPS25H(const char* devicePath, uint8_t deviceAddress)
         throw std::runtime_error("Failed to verify the device identity.");
     }
 
-    data = 0x00000000;
+    data = 0;
 
     data |= LPS25H_BDU_ENABLE;
     data |= LPS25H_DATARATE_1_HZ;
