@@ -23,14 +23,14 @@ public:
 
     double getPressure();
     double getTemperature();
-    
+
     void powerDown();
     void powerUp();
 
     void setAveragePressureSamples(LPS25HAveragePressureSamples_t averagePressureSamples);
     void setAverageTemperatureSamples(LPS25HAverageTemperatureSamples_t averageTemperatureSamples);
     void setDataRate(LPS25HDataRate_t dataRate);
-
+    
     void triggerMeasurement();
 
 private:
