@@ -26,7 +26,6 @@ int main(int argc, char** argv)
     double pressure, temperature;
 
     LPS25H sensor("/dev/i2c-1");
-    sensor.calibrate();
 
     pressure = sensor.getPressure();
     std::cout << "Pressure: " << pressure << " hPa" << std::endl;
