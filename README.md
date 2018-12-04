@@ -49,6 +49,7 @@ The optional parameter *deviceAddress* allows you to override the address of the
 standalone sensor or a modified version of the Sense Hat board.
 
 Upon creation of the object, the sensor is configured with the following options:
+
 |Option|Value|
 |--|--|
 |Output data rate|LPS25H_DATARATE_1_HZ|
