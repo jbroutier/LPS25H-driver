@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 ## Documentation
 
-#### `LPS25H::LPS25H(const char* devicePath, uint8_t deviceAddress = LPS25H_DEVICE_ADDRESS)`
+### `LPS25H::LPS25H(const char* devicePath, uint8_t deviceAddress = LPS25H_DEVICE_ADDRESS)`
 ___
 Creates a LPS25H object.
 
